@@ -1,38 +1,53 @@
-# Proof of Concept (PoC) of the IPv4 Teardrop Attack
+# IPv4 Fragmentarion Attack (Teardrop ICMP/UDP) Writeup
 
-This repository contains a practical demonstration of the Teardrop attack, which exploits a vulnerability in the IPv4 fragment reassembly process. The main objective is to learn how to manipulate the datagram header.
+## Introduction
+This writeup emerges from desire to learn the structure of IPv4 datagram headers and how to manipulate them, rather than simply exploiting the vulnerability itself.
+This folder of repository contains a practical demonstration of the Teardrop attack, which exploits a vulnerability in the IPv4 Fragment reassembly process.
 
-## Overview
+The attack consists of sending fragments of IP packets with malicious offsets, causing data overlap. Vulnerable systems can suffer from memory exhaustion or critical failure (BSOF/Kernel Panic) while attempting to process these fragments.
 
-The attack consists of sending fragments of IP packets with malicious offsets, causing data overlap. Vulnerable systems can instantly suffer from memory exhaustion or critical failure (BSOF/Kernel Panic) while attempting to process these fragments.
+## Index
 
-### Test Enviroment
+- [Introduction](#introduction)
+- [Folder Structure](#folder-structure)
+- [Test Enviroment & Technologies Used](#test-enviroment-&-technologies-used)
+- [How it works](#how-it-works)
+- [Result and impact](#result-and-impact)
+- [Conclusion](#conclusion)
 
-* **Attacker:** Python + Scapy.
-* **Victim 1:** Windows XP Pro SP1 (VMware via Bridge Mode).
-* **Victim 2:** Windows 10 Pro (Host).
+## Folder Structure
 
-## Repository Structure
+The repository is organized as follows:
 
 ```text
 teardrop-ipv4/
 ├─ README.md               
-├─ report/                 # Detailed documentation
+├─ report/                         # Detailed documentation
 │   └─ Report_Teardrop_IPv4.md
-├─ images/                 # Evidences of sistem impact
+├─ images/                         # Evidences of sistem impact
 │   ├─ xp_idle.png
 │   ├─ xp_attack.png
 │   ├─ win10_idle.png
 │   └─ win10_attack.png
-└─ scripts/                # PoC in Python
-    ├─ teardrop_v1.py      # Script of validation
-    └─ teardrop_v2.py      # Autamated script with IP Spoofing
+└─ scripts/                        # PoC in Python
+    ├─ teardrop_v1.py              # Script of validation
+    └─ teardrop_v2.py              # Autamated script with IP Spoofing
 
 ```
 
+## Test Enviroment & Technologies Used
+
+* **Attacker:** Python + Scapy + Linux
+* **Victim 1:** Windows XP Pro SP1 (VMware via Bridge Mode).
+* **Victim 2:** Windows 10 Pro (Host).
+* **Linux CLI Tools:** ifconfig, grep
+* **Windows CMD Tools:** ipconfig 
+* **Forensiscs Tools:** Wireshark
+
+
 ## How it works
 
-This technique exploits the **Offset** field of the second packet, setting it to the lowest value at the end of the second packet, forcing the kernel to handle conflicting data.
+This technique exploits the **Offset** field of the second packet, setting it to a small value, so that is data overlap with the first fragment during reassembly, forcing the kernel to handle conflicting data.
 
 ### Example of Logic (Scapy)
 
@@ -49,14 +64,13 @@ During Wireshark analysis, the acceptance of overlapping fragments (`Reassembled
 
 ### Performance Comparison
 
-| Sistema | Impacto Observado | Resiliência |
+| System | Impact | Resilience |
 | --- | --- | --- |
 | **Windows XP SP1** | Controlled increase in *Non-Paged Pool* (+151 MB). | Stable (Native protection against blocking). |
 | **Windows 10 Pro** | RAM usage jumped from 43% to 96%. Cache drastically reduced. | Vulnerable due to resource exhaustion (DoS due to slowness). |
+
 ## Conclusion
 
-Even if the system does not suffer an immediate crash (Direct Screen of Death - DSOD), Windows 10 demonstrates vulnerability to resource exhaustion, resulting in slowness and difficulty in restoring memory even after the attack ends. 
-
----
+Both machines where imune to IPv4 Fragmentation Attack immediate crach due non-paged pool memory leak, although Windows 10 Pro has demonstrated vulnerability to resource exhaustion, resulting in slowness and difficulty in restoring memory even after the attack ends. 
 
 **Note:** To obtain the complete technical report with evidence and analysis, access the directory [`/report`](https://www.google.com/search?q=./report/Report_Teardrop_IPv4.md).
