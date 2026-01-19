@@ -9,9 +9,9 @@
 - [Troubleshooting](#troubleshooting)
 - [Execution and Analysis](#executionandanalysis)
 - [Impact](#impact)
-- [Result and impact](#result-and-impact)
 - [Conclusion](#conclusion)
-- [Concepts and Justifications](#concepts-and-justifications)
+- [Concepts](#concepts)
+
 ## Introduction
 This lab emerges from desire to learn the structure of IPv4 datagram headers and how to manipulate them, rather than simply exploiting the vulnerability itself.
 This folder of repository contains a practical demonstration of the Teardrop attack, which exploits a vulnerability in the IPv4 Fragment reassembly process.
@@ -238,10 +238,10 @@ Wireshark shows that the attack was successful at layer 3 of the TCP/IP model. T
 	1. Windows XP Pro (via VM)
 	
         ### Windows XP - Idle
-![XP Idle](../images/xp-idle.png)
+![XP Idle](https://github.com/olgafedyuk/Network-Attacks/blob/main/Teardrop-IPv4/images/xp-idle.png)
 
         ### Windows XP - Attack
-![XP Idle](../images/xp-attak.png)
+![XP Idle](https://github.com/olgafedyuk/Network-Attacks/blob/main/Teardrop-IPv4/images/xp-attack.png)
 
 	Data comparison at Task Manager reveals operational cost:
 	
@@ -257,12 +257,12 @@ The non-paged memory pool does not grow indefinitely until memory is exhausted, 
 	2. Windows 10 Pro
 	
         ### Windows 10 - Idle
-![XP Idle](../images/10-idle.png)
+![XP Idle](https://github.com/olgafedyuk/Network-Attacks/blob/main/Teardrop-IPv4/images/xp-attack.png)
         
         ### Windows 10 - Attack
-![XP Idle](../images/10-attak.png)
+![XP Idle](https://github.com/olgafedyuk/Network-Attacks/blob/main/Teardrop-IPv4/images/10-attack.png)
 
-    O sistema atingiu o limite da RAM física durante o ataque massivo.
+System has reached RAM limit during the attack.
 
 | Metrics            | In Rest (Idle)   | During Ataque    | Impact                       |
 |:-------------------|:-----------------|:-----------------|:-----------------------------|
@@ -284,7 +284,7 @@ The system experienced slowdowns during the simultaneous use of various programs
 
 Both machines where imune to IPv4 Fragmentation Attack immediate crach due non-paged pool memory leak, although Windows 10 Pro has demonstrated vulnerability to resource exhaustion, resulting in slowness and difficulty in restoring memory even after the attack ends.
 
-## Concepts and Justifications
+## Concepts
 
 **Non-paged Pool:** Kernel memory that cannot be moved to disk (to the paging file), it is always stored only in the physical memory. A large non-paged pool size often indicates that there is a memory leak in some system component or device driver. If exhausted, the system crashes. 
 **Cached:** Cache memory acts as a high-speed bridge between the CPU and RAM. Temporarily holds data and instructions that the CPU is likely to use again soon, minimizing the need to access the slower main memory. https://www.geeksforgeeks.org/computer-science-fundamentals/cache-memory/
