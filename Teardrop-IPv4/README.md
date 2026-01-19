@@ -231,7 +231,7 @@ On the 2nd packet frag=1 (offset of 1 x 8 bytes) is defined, so system need to d
 		├─ Status: Identified as [Reassembled IPv4], indicating that the TCP/IP stack has accepted the peering.
 		└─ Ambiguity: Wireshark interprets the final payload as NTP because the spoofed source port of the first fragment is 123.
 
-Wireshark shows that the attack was successful at layer 3 of the TCP/IP model. The first fragment delivers 1408 bytes and the second the rest of the packet, but the second starts at the 8th byte of the packet, meaning it overlaps the first fragment by 1400 bytes. Thus, the system receives two different pieces of data for the same memory space.
+Wireshark shows that the attack was successful at layer 3 of the OSI model (Network Layer) / Internet Layer of TCP/IP. The first fragment delivers 1408 bytes and the second the rest of the packet, but the second starts at the 8th byte of the packet, meaning it overlaps the first fragment by 1400 bytes. Thus, the system receives two different pieces of data for the same memory space.
 
 ## Impact
 
