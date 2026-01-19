@@ -158,7 +158,7 @@ On the 2nd packet frag=1 (offset of 1 x 8 bytes) is defined, so sistem need to d
 	
 		Frame: 13006545
 		Interface: en0
-		Protocol Stack: Ethernet II → IPv4 → Data (Fragmento 1) 
+		Protocol Stack: Ethernet II -> IPv4 -> Data (Fragmento 1) 
 		IPv4 
 		├─ Version: 4 
 		├─ Header Length: 20 bytes 
