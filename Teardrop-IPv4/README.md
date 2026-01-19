@@ -25,7 +25,7 @@ The repository is organized as follows:
 ```text
 teardrop-ipv4/
 ├─ README.md               
-├─ images/                         # Evidences of sistem impact
+├─ images/                         # Evidences of system impact
 │   ├─ xp_idle.png
 │   ├─ xp_attack.png
 │   ├─ win10_idle.png
@@ -78,7 +78,7 @@ manual service initialization:
 ## Execution and Analysis 
 
 Script v1: validation of overlap of two 1400 byte packets. 
-On the 2nd packet frag=1 (offset of 1 x 8 bytes) is defined, so sistem need to deal with overlap of 1400 bytes.
+On the 2nd packet frag=1 (offset of 1 x 8 bytes) is defined, so system need to deal with overlap of 1400 bytes.
 	
 ```python
     from scapy.all import *
