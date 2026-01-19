@@ -41,7 +41,8 @@ teardrop-ipv4/
 * **Attacker:** Python + Scapy + Linux
 * **Victim 1:** Windows XP Pro SP1 (VMware via Bridge Mode).
 * **Victim 2:** Windows 10 Pro (Host).
-* **Linux CLI Tools:** ifconfig, grep
+* **Linux CLI Tools:** ifconfig, grep, traceroute
+
 * **Windows CMD Tools:** ipconfig, netsh 
 * **Forensiscs Tools:** Wireshark
 
