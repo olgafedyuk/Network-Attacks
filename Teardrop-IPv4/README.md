@@ -42,7 +42,7 @@ teardrop-ipv4/
 * **Victim 1:** Windows XP Pro SP1 (VMware via Bridge Mode).
 * **Victim 2:** Windows 10 Pro (Host).
 * **Linux CLI Tools:** ifconfig, grep
-* **Windows CMD Tools:** ipconfig 
+* **Windows CMD Tools:** ipconfig, netsh 
 * **Forensiscs Tools:** Wireshark
 
 ## How it works
